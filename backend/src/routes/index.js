@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import ScoreCardRouter from './scoreCard.js';
+import RatingRouter from './rating.js';
 
 const router = Router();
-router.use('/', ScoreCardRouter);
+router.use('/', RatingRouter);
 export default router;
