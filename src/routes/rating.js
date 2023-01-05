@@ -133,7 +133,7 @@ router.get("/searchRating", async (req, res) => {
     await page.goto(url);
 
     try{
-        await page.waitForSelector('#courseName', {visible: true, timeout: 8000})
+        await page.waitForSelector('#courseName', {visible: true, timeout: 20000})
     } catch (e) {
         console.log("timeout");
         res.json({pageNum: -1, result: []}); 
