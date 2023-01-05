@@ -15,7 +15,7 @@ router.get("/searchPtt", async (req, res) => {
     try{
         await page.waitForSelector('.r-ent', {visible: true, timeout: 500})
     } catch (e) {
-        res.json({result: []});
+        res.json({pageNum: -1, result: []});
         return;
     }
     
@@ -58,7 +58,8 @@ router.get("/detailPtt", async (req, res) => {
     try{
         await page.waitForSelector('#main-content', {visible: true, timeout: 500})
     } catch (e) {
-        res.json({result: []});
+        console.log("timeout");
+        res.json({pageNum: -1, result: []});
         return;
     }
 
@@ -69,33 +70,39 @@ router.get("/detailPtt", async (req, res) => {
     });
 
     let data = {url};
-    let array = result.split("標題");
-    data.title = array[array.length - 1].split("時間")[0].trim();
+ 
+    let array = result.split(/標題|時間/);
+    data.courseName = array[1].trim();
+
     array = result.split("哪一學年度修課：");
 
-    for (let i = 0; i < 5; i++){
+    array = array[array.length - 1].split("ψ");
+    data.year = array[0].trim();
+    array = array[array.length - 1].split("授課教師 (若為多人合授請寫開課教師，以方便收錄)");
+
+    if (array[array.length - 1].includes("λ")){
+        array = array[array.length - 1].split("λ");
+        data.teacher = array[0].trim();
+        array = array[array.length - 1].split("開課系所與授課對象 (是否為必修或通識課 / 內容是否與某些背景相關)");
         
-        if (i === 0){
-            array = array[array.length - 1].split("ψ 授課教師 (若為多人合授請寫開課教師，以方便收錄)");
-            data.year = array[0].trim();
-        }
-        if (i === 1){
-            array = array[array.length - 1].split("λ 開課系所與授課對象 (是否為必修或通識課 / 內容是否與某些背景相關)");
-            data.teacher = array[0].trim();
-        }
-        if (i === 2){
-            array = array[array.length - 1].split("δ 課程大概內容");
-            data.classification = array[0].trim();
-        }
-        if (i === 3){
-            array = array[array.length - 1].split("Ω 私心推薦指數(以五分計) ★★★★★");
-            data.description = array[0].trim();
-        }
-        if (i === 4){
-            array = array[array.length - 1].split("η 上課用書(影印講義或是指定教科書)");
-            data.rating = array[0].trim();
-        }
+        array = array[array.length - 1].split("δ");
+        data.classification = array[0].trim();
+        array = array[array.length - 1].split("課程大概內容");
     }
+    else{
+        array = array[array.length - 1].split("δ");
+        data.teacher = array[0].trim();
+        array = array[array.length - 1].split("課程大概內容");
+    }
+
+    array = array[array.length - 1].split("Ω");
+    data.description = array[0].trim();
+    array = array[array.length - 1].split("私心推薦指數(以五分計) ★★★★★");
+
+        
+    array = array[array.length - 1].split("η");
+    data.rating = array[0].trim();
+    array = array[array.length - 1].split("上課用書(影印講義或是指定教科書)");
 
     browser.close();
     console.log(data);
@@ -123,15 +130,15 @@ router.get("/searchRating", async (req, res) => {
         });
     });
 
-    let url = `https://rating.myntu.me/search/${req.query.pageNum -1}?courseName=${req.query.key}`; 
+    let url = `https://rating.myntu.me/search/${req.query.pageNum - 1}?courseName=${req.query.key}`; 
     console.log(url);
     await page.goto(url);
 
     try{
-        await page.waitForSelector('#courseName', {visible: true, timeout: 10000})
+        await page.waitForSelector('#courseName', {visible: true, timeout: 5000})
     } catch (e) {
-        console.log("timeout")
-        res.json({result: []}); 
+        console.log("timeout");
+        res.json({pageNum: -1, result: []}); 
         return;
     }
 
@@ -141,8 +148,8 @@ router.get("/searchRating", async (req, res) => {
     });
 
     let teacher = await page.evaluate(() => {
-        let result = Array.from(document.querySelectorAll(".jss34"));
-        return result.map(e => (e.textContent).slice(
+        let tmp = Array.from(document.querySelectorAll(".jss34"));
+        return tmp.map(e => (e.textContent).slice(
             0, e.textContent.indexOf(' ')));
     });
 
@@ -156,6 +163,13 @@ router.get("/searchRating", async (req, res) => {
         return tmp.map(e => (e.textContent));
     });
 
+    let pageNum = await page.evaluate(() => {
+        let tmp = Array.from(document.querySelectorAll(".MuiButtonBase-root"));
+        tmp = tmp.map(e => (e.textContent));
+        return parseInt(tmp[tmp.length - 5]);
+    });
+
+    
     let result = [];
     for (let i = 0; i < courseName.length; i++)
         result.push({
@@ -170,9 +184,8 @@ router.get("/searchRating", async (req, res) => {
         });
 
     console.log(result);
-
     browser.close();
-    res.json({pageNum: 0, result}); 
+    res.json({pageNum, result}); 
 });
 
 export default router;
