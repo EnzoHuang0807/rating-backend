@@ -42,7 +42,6 @@ router.get("/searchPtt", async (req, res) => {
     });
 
     browser.close();
-    console.log(result);
     res.json({pageNum, result});
 });
 
@@ -105,7 +104,6 @@ router.get("/detailPtt", async (req, res) => {
     array = array[array.length - 1].split("上課用書(影印講義或是指定教科書)");
 
     browser.close();
-    console.log(data);
     res.json({result: data});
 });
 
@@ -135,7 +133,7 @@ router.get("/searchRating", async (req, res) => {
     await page.goto(url);
 
     try{
-        await page.waitForSelector('#courseName', {visible: true, timeout: 5000})
+        await page.waitForSelector('#courseName', {visible: true, timeout: 8000})
     } catch (e) {
         console.log("timeout");
         res.json({pageNum: -1, result: []}); 
@@ -183,7 +181,6 @@ router.get("/searchRating", async (req, res) => {
             }
         });
 
-    console.log(result);
     browser.close();
     res.json({pageNum, result}); 
 });
